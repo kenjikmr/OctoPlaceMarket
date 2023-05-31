@@ -211,9 +211,10 @@ async function getSellTransactions(req, res) {
     const successfulEvents = events.filter(
       (event) => event[5] === successStatus
     );
-    console.log(logs);
 
-    res.send("getSellTransactions");
+    console.log(successfulEvents);
+
+    res.json(successfulEvents);
   } catch (err) {
     console.error(err);
     res.status(500).send("Internal Server Error");
