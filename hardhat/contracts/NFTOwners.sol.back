@@ -1,0 +1,95 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
+contract NFTOwners {
+    // Declare a mapping to keep track of NFT owners
+    mapping(address => bool) public nftOwners;
+
+    // Declare an event to emit when an owner is added
+    event OwnerAdded(address indexed owner);
+
+    function collectOwners(address _collection, uint256 _startIndex, uint256 _endIndex) public {
+        // Loop through each token ID in the specified range
+        for (uint256 i = _startIndex; i <= _endIndex; i++) {
+            // Get the owner of the current token ID
+            address owner = IERC721(_collection).ownerOf(i);
+
+            // If the owner is not already in the mapping, add them
+            if (!nftOwners[owner]) {
+                nftOwners[owner] = true;
+                emit OwnerAdded(owner);
+            }
+        }
+    }
+
+    // Returns an array of all the unique NFT owners
+    function getOwners() public view returns (address[] memory) {
+        // Declare a dynamic array to store the unique owners
+        address[] memory ownersArray = new address[](getOwnerCount());
+
+        // Loop through each owner in the mapping and add them to the array
+        uint256 index = 0;
+        for (uint256 i = 0; i < getOwnerCount(); i++) {
+            address owner = getKeyAtIndex(i);
+            if (nftOwners[owner]) {
+                ownersArray[index] = owner;
+                index++;
+            }
+        }
+
+        return ownersArray;
+    }
+
+    // Returns the number of unique NFT owners
+    function getOwnerCount() public view returns (uint256) {
+        // Loop through each owner in the mapping and count them
+        uint256 count = 0;
+        for (uint256 i = 0; i < getKeyCount(); i++) {
+            address key = getKeyAtIndex(i);
+            if (nftOwners[key]) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    bytes32[] private bytes32KeySet;
+    mapping(bytes32 => uint) private bytes32KeyPointers;
+// Returns the number of keys in the nftOwners mapping
+    function getKeyCount() public view returns (uint256) {
+        return bytes32KeySet.length;
+    }
+
+    // Returns the key at the specified index in the nftOwners mapping
+    function getKeyAtIndex(uint256 _index) public view returns (address) {
+        return bytes32KeySet[_index];
+    }
+
+    
+    function insertKey(bytes32 _key) internal returns (bool) {
+        if (containsKey(_key)) return false;
+        bytes32KeyPointers[_key] = bytes32KeySet.length;
+        bytes32KeySet.push(_key);
+        return true;
+    }
+
+    function removeKey(bytes32 _key) internal returns (bool) {
+        if (!containsKey(_key)) return false;
+        uint256 keyToDelete = bytes32KeyPointers[_key];
+        bytes32 lastKey = bytes32KeySet[bytes32KeySet.length-1];
+        bytes32KeySet[keyToDelete] = lastKey;
+        bytes32KeyPointers[lastKey] = keyToDelete;
+        bytes32KeySet.pop();
+        delete bytes32KeyPointers[_key];
+        return true;
+    }
+
+    // Check if a key exists in the dynamic array and mapping
+    function containsKey(bytes32 _key) internal view returns (bool) {
+        if (bytes32KeySet.length == 0) return false;
+        return bytes32KeySet[bytes32KeyPointers[_key]] == _key;
+    }
+}
