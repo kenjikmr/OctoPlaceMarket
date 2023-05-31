@@ -211,7 +211,6 @@ async function getSellTransactions(req, res) {
     const successfulEvents = events.filter(
       (event) => event[5] === successStatus
     );
-
     console.log(successfulEvents);
 
     res.json(successfulEvents);
